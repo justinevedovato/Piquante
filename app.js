@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const path = require("path");
 
 const saucesRoutes = require("./routes/sauces");
 const userRoutes = require("./routes/user");
@@ -8,7 +9,7 @@ const app = express();
 
 mongoose
   .connect(
-    "mongodb+srv://justinev:uyRdLe0WUs1mRA9p@cluster0.3z3vl.mongodb.net/<dbname>?retryWrites=true&w=majority",
+    "mongodb+srv://justinev:uyRdLe0WUs1mRA9p@cluster0.3z3vl.mongodb.net/laPiquante?retryWrites=true&w=majority",
     { useNewUrlParser: true, useUnifiedTopology: true }
   )
   .then(() => console.log("Connexion à MongoDB réussie !"))
@@ -28,6 +29,8 @@ app.use((req, res, next) => {
 });
 
 app.use(bodyParser.json());
+
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 app.use("/api/sauces", saucesRoutes);
 app.use("/api/auth", userRoutes);

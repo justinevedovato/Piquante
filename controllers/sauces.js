@@ -1,10 +1,15 @@
 const Sauce = require("../models/sauce");
+const fs = require("fs");
 
 // Enregistrer une nouvelle sauce
 exports.createSauce = (req, res, next) => {
-  delete req.body._id;
+  const sauceObject = JSON.parse(req.body.sauce);
+  delete sauceObject._id;
   const sauce = new Sauce({
-    ...req.body,
+    ...sauceObject,
+    imageUrl: `${req.protocol}://${req.get("host")}/images/${
+      req.file.filename
+    }`,
   });
   sauce
     .save()
@@ -14,16 +19,39 @@ exports.createSauce = (req, res, next) => {
 
 // Modifier une sauce
 exports.modifySauce = (req, res, next) => {
-  Sauce.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
-    .then(() => res.status(200).json({ message: "Objet modifié!" }))
+  const sauceObject = req.file
+    ? {
+        // Si l'utilisateur modifie l'image:
+        ...JSON.parse(req.body.sauce),
+        imageUrl: `${req.protocol}://${req.get("host")}/images/${
+          req.file.filename
+        }`,
+      }
+    : { ...req.body }; // Sinon: modification simple
+  Sauce.updateOne(
+    { _id: req.params.id },
+    { ...sauceObject, _id: req.params.id }
+  )
+    .then(() =>
+      res.status(200).json({ message: "L'objet a bien été modifié !" })
+    )
     .catch((error) => res.status(400).json({ error }));
 };
 
 // Supprimer une sauce
 exports.deleteSauce = (req, res, next) => {
-  Sauce.deleteOne({ _id: req.params.id })
-    .then(() => res.status(200).json({ message: "Objet supprimé !" }))
-    .catch((error) => res.status(400).json({ error }));
+  Sauce.findById(req.params.id) // Trouve l'objet dans la DB, récupère le nom du fichier dans son url, et le supprime
+    .then((sauce) => {
+      const filename = sauce.imageUrl.split("/images/")[1];
+      fs.unlink(`images/${filename}`, () => {
+        Sauce.deleteOne({ _id: req.params.id })
+          .then(() =>
+            res.status(200).json({ message: "L'objet a bien été supprimé !" })
+          )
+          .catch((error) => res.status(400).json({ error }));
+      });
+    })
+    .catch((error) => res.status(500).json({ error }));
 };
 
 // Renvoie la sauce avec l'ID fourni
