@@ -2,18 +2,17 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const path = require("path");
+const config = require("./config");
 
 const saucesRoutes = require("./routes/sauces");
 const userRoutes = require("./routes/user");
 const app = express();
 
+mongoose.set("useFindAndModify", false);
 mongoose
-  .connect(
-    "mongodb+srv://justinev:uyRdLe0WUs1mRA9p@cluster0.3z3vl.mongodb.net/laPiquante?retryWrites=true&w=majority",
-    { useNewUrlParser: true, useUnifiedTopology: true }
-  )
+  .connect(config.mongoID, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("Connexion à MongoDB réussie !"))
-  .catch(() => console.log("Connexion à MongoDB échouée !"));
+  .catch((error) => console.log("Connexion à MongoDB échouée !", error));
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
