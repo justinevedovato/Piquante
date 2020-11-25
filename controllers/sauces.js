@@ -3,6 +3,8 @@ const fs = require("fs");
 const sharp = require("sharp");
 const path = require("path");
 
+const regexText = /^[0-9\p{L}, '()/:!.&-]+$/iu;
+
 // Enregistrer une nouvelle sauce
 exports.createSauce = (req, res, next) => {
   if (req.file.size > 5000000) {
@@ -15,6 +17,10 @@ exports.createSauce = (req, res, next) => {
       .toFile(path.resolve(req.file.destination, "resized", image));
 
     const sauceObject = JSON.parse(req.body.sauce);
+    for (let field of ["name", "manufacturer", "description", "mainPepper"]) {
+      if (!sauceObject[field].match(regexText))
+        throw new Error(`Le champ ${field} est invalide`);
+    }
     const sauce = new Sauce({
       ...sauceObject,
       imageUrl: `${req.protocol}://${req.get("host")}/images/resized/${
@@ -41,6 +47,10 @@ exports.modifySauce = (req, res, next) => {
         }`,
       }
     : { ...req.body }; // Sinon: modification simple
+  for (let field of ["name", "manufacturer", "description", "mainPepper"]) {
+    if (!sauceObject[field].match(regexText))
+      throw new Error(`Le champ ${field} est invalide`);
+  }
   Sauce.updateOne(
     { _id: req.params.id },
     { ...sauceObject, _id: req.params.id }
@@ -57,12 +67,15 @@ exports.likeSauce = (req, res, next) => {
     .then((sauce) => {
       let hasLiked = sauce.usersLiked.includes(req.body.userId);
       let hasDisliked = sauce.usersDisliked.includes(req.body.userId);
-      console.log(hasLiked, hasDisliked);
-      // Pour empêcher de truquer les votes via la console en renvoyant la requête:
+      // Pour empêcher de truquer les votes via la console en renvoyant la requête via "Replay XHR":
       if (hasLiked && req.body.like == 1) {
-        return res.status(400).json({ error: "Has already liked!" });
+        return res
+          .status(400)
+          .json({ error: "Vous avez déjà donné un avis positif!" });
       } else if (hasDisliked && req.body.like == -1) {
-        return res.status(400).json({ error: "Has already disliked!" });
+        return res
+          .status(400)
+          .json({ error: "Vous avez déjà donné un avis négatif!" });
       }
 
       let updateModel; // Prépare la variable réutilisée dans tous les if/else pour éviter les répétitions
@@ -108,7 +121,7 @@ exports.likeSauce = (req, res, next) => {
 
       Sauce.updateOne(
         { _id: req.params.id },
-        updateModel,
+        updateModel, // Récupère les données selon le "if" en question
         { new: true } // Pour renvoyer le résultat APRES que le document ait été mis à jour
       )
         .then(() =>

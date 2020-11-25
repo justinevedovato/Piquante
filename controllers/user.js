@@ -3,10 +3,15 @@ const jwt = require("jsonwebtoken");
 
 const User = require("../models/user");
 
+const regexEmail = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
 exports.signup = (req, res, next) => {
   bcrypt
     .hash(req.body.password, 10)
     .then((hash) => {
+      if (!req.body.email.match(regexEmail)) {
+        throw new Error("Ceci n'est pas une adresse email valide");
+      }
       const user = new User({
         email: req.body.email,
         password: hash,
@@ -22,14 +27,18 @@ exports.signup = (req, res, next) => {
 exports.login = (req, res, next) => {
   User.findOne({ email: req.body.email })
     .then((user) => {
+      if (!req.body.email.match(regexEmail)) {
+        throw new Error("Ceci n'est pas une adresse email valide");
+      }
+      console.log("user:", user);
       if (!user) {
-        return res.status(401).json({ error: "utilisateur non trouvé" });
+        return res.status(401).json({ error });
       }
       bcrypt
         .compare(req.body.password, user.password)
         .then((valid) => {
           if (!valid) {
-            return res.status(401).json({ error: "Mot de passe incorrect" });
+            return res.status(401).json({ error });
           }
           res.status(200).json({
             userId: user._id,
