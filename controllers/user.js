@@ -1,4 +1,4 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcrypt"); // Pour hacher le mot de passe
 const jwt = require("jsonwebtoken");
 
 const User = require("../models/user");
@@ -30,7 +30,6 @@ exports.login = (req, res, next) => {
       if (!req.body.email.match(regexEmail)) {
         throw new Error("Ceci n'est pas une adresse email valide");
       }
-      console.log("user:", user);
       if (!user) {
         return res.status(401).json({ error });
       }
@@ -42,7 +41,7 @@ exports.login = (req, res, next) => {
           }
           res.status(200).json({
             userId: user._id,
-            token: jwt.sign({ userId: user._id }, "RANDOM_TOKEN", {
+            token: jwt.sign({ userId: user._id }, process.env.TOKEN_KEY, {
               expiresIn: "24h",
             }),
           });

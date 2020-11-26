@@ -1,6 +1,6 @@
 const Sauce = require("../models/sauce");
-const fs = require("fs");
-const sharp = require("sharp");
+const fs = require("fs"); // file-system
+const sharp = require("sharp"); // convert images
 const path = require("path");
 
 const regexText = /^[0-9\p{L}, '()/:!.&-]+$/iu;
@@ -11,15 +11,16 @@ exports.createSauce = (req, res, next) => {
     res.status(400).json({ message: "le fichier est trop volumineux" });
   } else {
     const { filename: image } = req.file;
-    sharp(req.file.path)
+    sharp(req.file.path) // redimensionne les images trop larges
       .resize(500)
       .jpeg({ quality: 50 })
       .toFile(path.resolve(req.file.destination, "resized", image));
 
     const sauceObject = JSON.parse(req.body.sauce);
     for (let field of ["name", "manufacturer", "description", "mainPepper"]) {
-      if (!sauceObject[field].match(regexText))
+      if (!sauceObject[field].match(regexText)) {
         throw new Error(`Le champ ${field} est invalide`);
+      }
     }
     const sauce = new Sauce({
       ...sauceObject,

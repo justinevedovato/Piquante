@@ -2,15 +2,18 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const path = require("path");
-const config = require("./config");
 
 const saucesRoutes = require("./routes/sauces");
 const userRoutes = require("./routes/user");
 const app = express();
+require("dotenv").config();
 
 mongoose.set("useFindAndModify", false);
 mongoose
-  .connect(config.mongoID, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(process.env.API_KEY, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("Connexion à MongoDB réussie !"))
   .catch((error) => console.log("Connexion à MongoDB échouée !", error));
 
